@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .osinfo import IS_MAC, IS_WIN
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 FROZEN = bool(getattr(sys, "frozen", False))  # running as the packaged app
 APP_DIR = Path(getattr(sys, "_MEIPASS", "")) if FROZEN else Path(__file__).resolve().parent.parent
 DASHBOARD_DIR = APP_DIR / "dashboard"

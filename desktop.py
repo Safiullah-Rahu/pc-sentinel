@@ -2,11 +2,13 @@
 
 - Starts the engine in-process (or attaches to one that is already running).
 - Closing the window hides it; monitoring keeps running. Windows/Linux: tray menu Open / Quit.
+- Linux: the window runs in a child process so a GUI/OpenGL crash can never stop monitoring.
   macOS: launch the app again (Dock, Launchpad, Spotlight) to bring the window back; Quit from the app menu.
 - Launching a second time never starts a second copy: it asks the running one to show its window.
 - `--tray` starts hidden (used by "Start at login").
 """
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -21,7 +23,7 @@ except Exception:  # noqa: BLE001  (no native web-view backend on this desktop: 
 import main as engine
 from sentinel import singleton
 from sentinel.config import DATA_DIR, HOST, PORT, TOKEN_PATH, TRAY_ICON_PATH
-from sentinel.osinfo import IS_MAC, IS_WIN
+from sentinel.osinfo import IS_LINUX, IS_MAC, IS_WIN
 
 URL = f"http://{HOST}:{PORT}/"
 TITLE = "PC Sentinel"
@@ -106,7 +108,84 @@ def browser_mode(start_hidden):
     engine.stop_engine()
 
 
+def run_window_only():
+    """Child process on Linux: just the window. If the GUI stack crashes (e.g. no OpenGL), only this dies."""
+    if webview is None:
+        sys.exit(3)
+    webview.create_window(TITLE, URL, width=1480, height=920, min_size=(1100, 700),
+                          background_color="#05070d", text_select=True)
+    webview.start(private_mode=False, storage_path=str(DATA_DIR / "webview"))
+
+
+def _window_cmd():
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--window-only"]
+    return [sys.executable, os.path.abspath(__file__), "--window-only"]
+
+
+def linux_mode(start_hidden):
+    """Linux: the engine and tray live here; the window runs in a child process, so a crash in the
+    desktop's GTK/Qt/OpenGL stack can never stop monitoring. A window that crashes on start is retried
+    once with software rendering, then PC Sentinel falls back to the default browser."""
+    import subprocess
+    import threading
+    st = {"child": None, "started": 0.0, "software": False, "broken": False, "quit": False}
+    lock = threading.Lock()
+
+    def watch(child):
+        rc = child.wait()
+        if st["quit"] or rc == 0 or time.time() - st["started"] > 15:
+            return  # closed by the user (or after running fine): keep monitoring in the background
+        if not st["software"]:
+            st["software"] = True
+            spawn()
+        else:
+            st["broken"] = True
+            webbrowser.open(URL)
+
+    def spawn():
+        with lock:
+            if st["broken"]:
+                webbrowser.open(URL)
+                return
+            if st["child"] and st["child"].poll() is None:
+                return  # already open
+            env = dict(os.environ)
+            if st["software"]:
+                env.update(QT_XCB_GL_INTEGRATION="none", QT_QUICK_BACKEND="software", LIBGL_ALWAYS_SOFTWARE="1",
+                           QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu", WEBKIT_DISABLE_COMPOSITING_MODE="1")
+            st["child"] = subprocess.Popen(_window_cmd(), env=env)
+            st["started"] = time.time()
+            threading.Thread(target=watch, args=(st["child"],), daemon=True).start()
+
+    from sentinel import server
+    server.register_ui(show=spawn)
+    if not start_hidden:
+        spawn()
+    try:
+        import pystray
+        from PIL import Image
+        icon = pystray.Icon("PC Sentinel", Image.open(TRAY_ICON_PATH), "PC Sentinel — monitoring this computer",
+                            menu=pystray.Menu(pystray.MenuItem("Open PC Sentinel", lambda *_: spawn(), default=True),
+                                              pystray.Menu.SEPARATOR,
+                                              pystray.MenuItem("Quit (stop monitoring)", lambda *_: icon.stop())))
+        icon.run()  # blocks until Quit
+    except Exception:  # noqa: BLE001  (no tray on this desktop: keep running until Ctrl+C / logout)
+        print(f"PC Sentinel is running: {URL}  (Ctrl+C to stop)")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+    st["quit"] = True
+    if st["child"] and st["child"].poll() is None:
+        st["child"].terminate()
+    engine.stop_engine()
+
+
 def main():
+    if "--window-only" in sys.argv:
+        return run_window_only()
     if IS_WIN:
         import ctypes
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("PCSentinel.Desktop")
@@ -121,6 +200,8 @@ def main():
             break
         time.sleep(0.25)
 
+    if IS_LINUX:
+        return linux_mode(start_hidden)
     if webview is None:
         return browser_mode(start_hidden)
 

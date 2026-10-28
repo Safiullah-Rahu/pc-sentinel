@@ -1,6 +1,6 @@
 [project]
 name = "pc-sentinel"
-version = "1.1.0"
+version = "1.1.1"
 description = "Local, open-source security monitor: see what every app on your computer is doing."
 readme = "README.md"
 license = { text = "MIT" }

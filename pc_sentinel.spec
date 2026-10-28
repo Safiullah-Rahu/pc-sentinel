@@ -32,5 +32,5 @@ exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="PC Sentinel",
 coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="PC Sentinel")
 if MAC:
     app = BUNDLE(coll, name="PC Sentinel.app", icon="assets/sentinel-256.png", bundle_identifier="io.github.pcsentinel",
-                 info_plist={"CFBundleShortVersionString": "1.1.0", "NSHighResolutionCapable": True,
+                 info_plist={"CFBundleShortVersionString": "1.1.1", "NSHighResolutionCapable": True,
                              "LSApplicationCategoryType": "public.app-category.utilities"})

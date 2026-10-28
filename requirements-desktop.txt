@@ -1,0 +1,7 @@
+# Desktop window + tray icon. Linux also needs a web-view backend: either the system GTK packages
+# (Debian/Ubuntu: sudo apt install python3-gi gir1.2-webkit2-4.1) or Qt via `pip install "pywebview[qt]==6.2.1"`.
+# Without one, the app still runs and opens the dashboard in your default browser.
+-r requirements.txt
+pywebview==6.2.1
+pystray==0.19.5
+pillow==13.0.0

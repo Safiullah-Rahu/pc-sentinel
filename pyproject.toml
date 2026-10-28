@@ -1,0 +1,30 @@
+[project]
+name = "pc-sentinel"
+version = "1.1.0"
+description = "Local, open-source security monitor: see what every app on your computer is doing."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 150
+target-version = "py310"
+extend-exclude = ["dashboard", "assets", "build", "dist", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "S", "UP"]
+ignore = [
+  "S603", "S607", "S404",  # subprocess with list args built from validated values (reviewed)
+  "S110", "S112",          # try/except/pass in collectors that must never crash
+  "B008", "UP015",
+  "S104",                  # we bind to 127.0.0.1 only (config.HOST)
+  "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106", "S108", "S310"]
+"sentinel/config.py" = ["S108"]   # /tmp etc. appear in *detection patterns*, not as temp files we write
+"desktop.py" = ["S310"]           # urlopen of a constant http://127.0.0.1 URL
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Build output
+build/
+dist/
+*.zip
+*.tar.gz
+
+# Local runtime data never belongs in the repo (token, database, logs, personal threat intel)
+token.txt
+*.db
+*.db-shm
+*.db-wal
+*.log
+iocs.json
+watched_files.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

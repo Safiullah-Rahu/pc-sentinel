@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests · ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -r requirements-dev.txt
+      - name: Unit, API-security and engine smoke tests
+        run: python -m pytest -v
+      - name: Desktop app imports (window + tray libraries)
+        shell: bash
+        run: |
+          python -m pip install -r requirements-desktop.txt
+          python -c "import desktop, main; print('desktop app imports OK on', __import__('sys').platform)"
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: ruff check sentinel main.py desktop.py tests
+      - name: Static security analysis (bandit, medium+)
+        # subprocess use is intentional and reviewed: arguments are lists built from validated values
+        run: bandit -r sentinel main.py desktop.py -ll -s B404,B603,B607
+      - name: Known-vulnerability audit of pinned dependencies (pip-audit)
+        run: pip-audit -r requirements.txt -r requirements-desktop.txt --strict --desc on

@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build · ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: PC-Sentinel-windows-x64.zip
+          - os: macos-latest
+            asset: PC-Sentinel-macos-arm64.zip
+          - os: ubuntu-22.04
+            asset: PC-Sentinel-linux-x64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Linux build dependencies (Qt web view)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libxkbcommon0 libxcb-cursor0 libgl1 libnss3 libxcomposite1 libxdamage1 libxrandr2 libxtst6
+      - name: Install
+        shell: bash
+        run: |
+          python -m pip install -r requirements-desktop.txt pyinstaller==6.22.3
+          if [ "$RUNNER_OS" = "Linux" ]; then python -m pip install "pywebview[qt]==6.2.1"; fi
+      - name: Test before packaging
+        shell: bash
+        run: |
+          python -m pip install pytest==9.2.0 httpx==0.28.1
+          python -m pytest -q
+      - name: Build
+        run: pyinstaller --noconfirm pc_sentinel.spec
+      - name: Package
+        shell: bash
+        run: |
+          cd dist
+          if [ "$RUNNER_OS" = "Windows" ]; then 7z a -tzip "../${{ matrix.asset }}" "PC Sentinel"
+          elif [ "$RUNNER_OS" = "macOS" ]; then ditto -c -k --keepParent "PC Sentinel.app" "../${{ matrix.asset }}"
+          else tar -czf "../${{ matrix.asset }}" "PC Sentinel"; fi
+      - name: Checksum
+        shell: bash
+        run: |
+          if command -v sha256sum >/dev/null; then sha256sum "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+          else shasum -a 256 "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: |
+            ${{ matrix.asset }}
+            ${{ matrix.asset }}.sha256
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: assets/*
+          generate_release_notes: true

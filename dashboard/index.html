@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="sentinel-token" content="__SENTINEL_TOKEN__">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <title>PC Sentinel</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 27 7v8c0 6.5-4.6 11.6-11 14-6.4-2.4-11-7.5-11-14V7z' fill='%2305070d' stroke='%2322d3ee' stroke-width='2'/%3E%3Cpath d='M10 16h3.2l1.8-4 2.8 8 1.8-4H22' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="js/theme-init.js"></script>
+  <script defer src="js/util.js"></script>
+  <script defer src="js/icons.js"></script>
+  <script defer src="js/charts.js"></script>
+  <script defer src="js/graph.js"></script>
+  <script defer src="js/api.js"></script>
+  <script defer src="mock.js"></script>
+  <script defer src="js/ui.js"></script>
+  <script defer src="js/views/map.js"></script>
+  <script defer src="js/views/overview.js"></script>
+  <script defer src="js/views/alerts.js"></script>
+  <script defer src="js/views/network.js"></script>
+  <script defer src="js/views/processes.js"></script>
+  <script defer src="js/views/privacy.js"></script>
+  <script defer src="js/views/persistence.js"></script>
+  <script defer src="js/views/files.js"></script>
+  <script defer src="js/views/timeline.js"></script>
+  <script defer src="js/views/settings.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"><div class="grid-layer"></div><div class="scan-layer"></div></div>
+
+  <div class="app" id="app">
+    <aside class="sidebar" aria-label="Primary">
+      <a class="brand" id="brand" href="#/map" aria-label="PC Sentinel, Live Map"></a>
+      <nav class="nav" id="nav" aria-label="Views"></nav>
+      <div class="sidebar-foot" id="sidebar-foot"></div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button type="button" class="icon-btn" id="btn-collapse" aria-label="Collapse or expand the sidebar" aria-expanded="true" title="Collapse sidebar"></button>
+        <div class="page-title">
+          <span class="hud-label">PC Sentinel /</span>
+          <h1 id="page-title">Live Map</h1>
+          <span class="mock-chip" id="mock-chip" hidden title="No engine token in this page, so built-in sample data is shown"></span>
+        </div>
+        <label class="search" for="global-search">
+          <span class="search-icon" id="search-icon"></span>
+          <input id="global-search" type="search" placeholder="Filter this view…" autocomplete="off" spellcheck="false" aria-label="Filter the current view">
+          <kbd>/</kbd>
+        </label>
+        <div class="topbar-right">
+          <span class="live-ind" id="live-ind" role="status"></span>
+          <div class="clock" aria-label="Local time"><span class="clock-time num" id="clock-time">--:--:--</span><span class="clock-date" id="clock-date"></span></div>
+          <button type="button" class="notify-toggle" id="btn-notify" role="switch" aria-checked="false" aria-label="Desktop pop-ups for new alerts"></button>
+          <button type="button" class="icon-btn bell" id="btn-bell" aria-haspopup="dialog" aria-expanded="false" aria-controls="bell-pop" aria-label="Notifications"><span class="bell-badge" id="bell-badge" hidden></span></button>
+        </div>
+      </header>
+      <div class="banner" id="banner" role="status" aria-live="polite" hidden></div>
+      <main class="content" id="content" tabindex="-1">
+        <div id="view" class="view"></div>
+      </main>
+    </div>
+  </div>
+
+  <div class="bell-pop" id="bell-pop" role="dialog" aria-label="Unread critical and high alerts" hidden></div>
+  <div class="drawer-scrim" id="drawer-scrim" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true" tabindex="-1" hidden></aside>
+  <dialog class="dialog" id="dialog"></dialog>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <noscript><div class="noscript">PC Sentinel's dashboard needs JavaScript.</div></noscript>
+</body>
+</html>
